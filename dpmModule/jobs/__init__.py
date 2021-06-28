@@ -42,6 +42,7 @@ from . import adele
 from . import ilium
 from . import ark
 from . import hoyoung
+from . import lara
 
 __all__ = [
     "hero",
@@ -87,7 +88,8 @@ __all__ = [
     "adele",
     "ilium",
     "ark",
-    "hoyoung"]
+    "hoyoung",
+    "lara"]
 
 jobMap = {
     "히어로": hero,
@@ -134,6 +136,7 @@ jobMap = {
     "일리움": ilium,
     "아크": ark,
     "호영": hoyoung,
+    "라라": lara,
 }
 
 jobList = {
@@ -181,6 +184,7 @@ jobList = {
     "ilium": "일리움",
     "ark": "아크",
     "hoyoung": "호영",
+    "lara": "라라",
 }
 
 # used for gear lookup
@@ -230,6 +234,7 @@ job_branch_list = {
     "일리움": 1,
     "아크": 4,
     "호영": 3,
+    "라라": 1,
 }
 
 jobListOrder = __all__.copy()

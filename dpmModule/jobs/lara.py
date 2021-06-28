@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Optional, Tuple, List, Dict, Any
 
 from ..character.characterKernel import AbstractCharacter
@@ -11,14 +12,26 @@ from . import globalSkill
 from .jobbranch import magicians
 from . import jobutils
 
-#todo: 모든 스킬 변수 이름 영어 번역명으로 번경
+# todo: 모든 스킬 변수 이름 영어 번역명으로 번경
 
 
-class ElementalSoulStateWrapper:
+class ElementalSoulStateWrapper(core.GraphElement):
     def __init__(self):
-        self.water: int = 0
-        self.wind: int = 0
-        self.fire: int = 0
+        super(ElementalSoulStateWrapper, self).__init__("속성 상태")
+
+        self.elements = {
+            "water": False,
+            "wind": False,
+            "fire": False
+        }
+
+    def _set_element(self, el: str, new_state: bool):
+        self.elements[el] = new_state
+        return self._result_object_cache
+
+    def set_element(self, el: str, new_state: bool):
+        task = core.Task(self, partial(self._set_element, el, new_state))
+        return core.TaskHolder(task, el)
 
 
 class JobGenerator(ck.JobGenerator):
@@ -53,15 +66,14 @@ class JobGenerator(ck.JobGenerator):
 
     #def get_ruleset(self) -> Optional[RuleSet]:    todo: 최적 딜사이클 계산
 
-    #todo: 4차 스킬 구현, 재대로된 값 리턴
+    # todo: 4차 스킬 구현, 재대로된 값 리턴
     def generate(
         self, vEhc: AbstractVEnhancer, chtr: AbstractCharacter, options: Dict[str, Any]
     ) -> Tuple[DamageSkillWrapper, List[AbstractSkillWrapper]]:
 
         passive_level = chtr.get_base_modifier().passive_level + self.combat
 
-        #todo: 소환수 정확한 딜레이값 알아내기
-        #todo: 분출, 흡수 스킬들 쿨타임 공유 구현
+        # todo: 소환수 정확한 딜레이값 알아내기
 
         # 1차
         Unknown1stJobAttack = core.DamageSkill("정기 뿌리기", 660, 250, 4).wrap(core.DamageSkillWrapper)
@@ -71,8 +83,19 @@ class JobGenerator(ck.JobGenerator):
         Unknown1stJobAttack.onAfter(MountinKid)
 
         # 2차
-        #산의 씨앗은 자동 사용으로만 소환한다 가정
-        #todo: 산의 씨앗 공격주기 알아내기
+        # 산의 씨앗은 자동 사용으로만 소환한다 가정
+        # todo: 산의 씨앗 공격주기 알아내기
+        ElementalSoulState = ElementalSoulStateWrapper()
+
+        SetWaterBurst = ElementalSoulState.set_element("water", False)
+        SetWindBurst = ElementalSoulState.set_element("wind", False)
+        SetFireBurst = ElementalSoulState.set_element("fire", False)
+
+        SetWaterConsume = ElementalSoulState.set_element("water", True)
+        SetWindConsume = ElementalSoulState.set_element("wind", True)
+        SetFireConsume = ElementalSoulState.set_element("fire", True)
+
+        VeinBurst = core.BuffSkill("용맥 분출", 0, 0, cooltime=0.3*1000).wrap(core.BuffSkillWrapper)
         VeinBurstWater = core.SummonSkill("분출 : 너울이는 강", 450, (8/16) * 1000, 205 + 105, 4, 16*1000, cooltime=0.3*1000, rem=True).wrap(core.SummonSkillWrapper)
         VeinBurstWind = core.SummonSkill("분출 : 들개바람", 450, (5/16) * 1000, 65 + 105, 5, 16*1000, cooltime=0.3*1000, rem=True).wrap(core.SummonSkillWrapper)
         VeinBurstFire = core.DamageSkill("분출 : 해돋이 우물", 450, 110 + 72, 6, cooltime=0.3*1000).wrap(core.DamageSkillWrapper)
@@ -80,13 +103,20 @@ class JobGenerator(ck.JobGenerator):
         VeinBurstFireCarpet = core.SummonSkill("분출 : 해돋이 우물 (장판)", 0, 1000, 82, 1, 16*1000, 0, rem=True).wrap(core.SummonSkillWrapper)
         MountinSeed = core.SummonSkill("산의 씨앗", 0, 500, 55, 1 * 4, 10*1000).wrap(core.SummonSkillWrapper)
 
+        VeinBurstWaterOpt = core.OptionalElement(lambda: VeinBurst.is_available(), VeinBurstWater)
+        VeinBurstWindOpt = core.OptionalElement(lambda: VeinBurst.is_available(), VeinBurstWind)
+        VeinBurstFireOpt = core.OptionalElement(lambda: VeinBurst.is_available(), VeinBurstFire)
+
+        VeinBurstWater.protect_from_running()
+        VeinBurstWind.protect_from_running()
+        VeinBurstFire.protect_from_running()
         VeinBurstFirePallet.protect_from_running()
         VeinBurstFireCarpet.protect_from_running()
         MountinSeed.protect_from_running()
 
-        VeinBurstWater.onAfter(MountinSeed)
-        VeinBurstWind.onAfter(MountinSeed)
-        VeinBurstFire.onAfters([MountinSeed, VeinBurstFirePallet, VeinBurstFireCarpet])
+        VeinBurstWater.onAfters([VeinBurst, MountinSeed])
+        VeinBurstWind.onAfters([VeinBurst, MountinSeed])
+        VeinBurstFire.onAfters([VeinBurst, MountinSeed, VeinBurstFirePallet, VeinBurstFireCarpet])
 
         # 3차
         # 물, 바람 발현 스킬은 데미지에 영향을 주지 않음
@@ -104,12 +134,38 @@ class JobGenerator(ck.JobGenerator):
         VeinAwakening.onAfter(VeinCry)
 
         # 4차
-        #todo: 흡수 스킬들 딜레이 알아내기
-        #todo: 동일 속성 분출/흡수 동시에 불가능 조건 구현
-        ElementalSoulState = ElementalSoulStateWrapper()
-        VeinConsumWater = core.BuffSkill("흡수 : 강 웅덩이 물벼락", 0, 45*1000, cooltime=2.5*1000)
-        VeinConsumWind = core.BuffSkill("흡수 : 소소리 바람", 0, 45 * 1000, cooltime=2.5 * 1000)
-        VeinConsumFire = core.BuffSkill("흡수 : 햇빛 맹아리", 0, 45 * 1000, cooltime=2.5 * 1000)
+        # todo: 동일 속성 분출/흡수 동시에 불가능 조건 구현
+        VeinConsume = core.BuffSkill("용맥 흡수", 0, 0, 0.3*1000).wrap(core.BuffSkillWrapper)
+
+        VeinConsumeWater = core.BuffSkill("흡수 : 강 웅덩이 물벼락", 0, 45*1000, cooltime=2.5*1000).wrap(core.BuffSkillWrapper)
+        VeinConsumeWind = core.BuffSkill("흡수 : 소소리 바람", 0, 45 * 1000, cooltime=2.5*1000).wrap(core.BuffSkillWrapper)
+        VeinConsumeFire = core.BuffSkill("흡수 : 햇빛 맹아리", 0, 45 * 1000, cooltime=2.5*1000).wrap(core.BuffSkillWrapper)
+
+        VeinConsumeWater.protect_from_running()
+        VeinConsumeWind.protect_from_running()
+        VeinConsumeFire.protect_from_running()
+
+        VeinConsumeWater.onAfters([VeinConsume, VeinCry])
+        VeinConsumeWind.onAfters([VeinConsume, VeinCry])
+        VeinConsumeFire.onAfters([VeinConsume, VeinCry])
+
+        VeinConsumeWaterOpt = core.OptionalElement(lambda: VeinConsume.is_available(), VeinConsumeWater)
+        VeinConsumeWindOpt = core.OptionalElement(lambda: VeinConsume.is_available(), VeinConsumeWind)
+        VeinConsumeFireOpt = core.OptionalElement(lambda: VeinConsume.is_available(), VeinConsumeFire)
+
+        VeinConsumeWaterAttack = core.DamageSkill("흡수 : 강 웅덩이 물벼락 (공격)", 2500, 450, 6).wrap(core.DamageSkillWrapper)
+        VeinConsumeWindAttack = core.DamageSkill("흡수 : 소소리 바람 (공격)", 2500, 195, 2).wrap(core.DamageSkillWrapper)
+        VeinConsumeFireAttack = core.DamageSkill("흡수 : 햇빛 맹아리 (공격)", 2500, 180, 6).wrap(core.DamageSkillWrapper)
+
+        VeinConsumeWaterAttack.protect_from_running()
+        VeinConsumeWindAttack.protect_from_running()
+        VeinConsumeFireAttack.protect_from_running()
+
+        VeinConsumeWaterAttackOpt = core.OptionalElement(lambda: VeinConsumeWater.is_active() and VeinConsumeWaterAttack.is_available(), VeinConsumeWaterAttack)
+        VeinConsumeWindAttackOpt = core.OptionalElement(lambda: VeinConsumeWind.is_active() and VeinConsumeWindAttack.is_available(), VeinConsumeWindAttack)
+        VeinConsumeFireAttackOpt = core.OptionalElement(lambda: VeinConsumeFire.is_active() and VeinConsumeFireAttack.is_available(), VeinConsumeFireAttack)
+
+        Unknown1stJobAttack.onAfters([VeinConsumeWaterAttackOpt, VeinConsumeWindAttackOpt, VeinConsumeFireAttackOpt])
 
         return VeinAwakening, []
 
