@@ -81,116 +81,139 @@ class JobGenerator(ck.JobGenerator):
         # todo: 강화코어 적용
 
         # 1차
-        Unknown1stJobAttack = core.DamageSkill("정기 뿌리기", 660, 250, 4).wrap(core.DamageSkillWrapper)
+        LaraAttack = core.DamageSkill("정기 뿌리기", 660, 250, 4).wrap(core.DamageSkillWrapper)
         MountinKid = core.DamageSkill("산 꼬마", 0, (85 + 35) * 0.4, modifier=core.CharacterModifier(boss_pdamage=(105/85) * 100) + 45).wrap(core.DamageSkillWrapper)
 
         MountinKid.protect_from_running()
-        Unknown1stJobAttack.onAfter(MountinKid)
+        LaraAttack.onAfter(MountinKid)
 
         # 2차
         # 산의 씨앗은 자동 사용으로만 소환한다 가정
         # todo: 산의 씨앗 공격주기 알아내기
-        VeinBurst = core.BuffSkill("용맥 분출", 0, 0, cooltime=0.3*1000).wrap(core.BuffSkillWrapper)
-        VeinBurstWater = core.SummonSkill("분출 : 너울이는 강", 450, (8/16) * 1000, 205 + 105, 4, 16*1000, cooltime=0.3*1000).wrap(CancelableSummonWrapper)
-        VeinBurstWind = core.SummonSkill("분출 : 들개바람", 450, (5/16) * 1000, 65 + 105, 5, 16*1000, cooltime=0.3*1000).wrap(CancelableSummonWrapper)
-        VeinBurstFire = core.DamageSkill("분출 : 해돋이 우물", 450, 110 + 72, 6, cooltime=0.3*1000).wrap(core.DamageSkillWrapper)
-        VeinBurstFirePallet = core.SummonSkill("분출 : 해돋이 우물 (화산탄)", 0, (5/16) * 1000, 72, 1, 16*1000, 0).wrap(CancelableSummonWrapper)
-        VeinBurstFirePallet_2 = core.SummonSkill("분출 : 해돋이 우물 (화산탄 후속타)", 0, (5 / 16) * 1000, 72 * 0.9, 2, 16*1000, 0).wrap(CancelableSummonWrapper)
-        VeinBurstFireCarpet = core.SummonSkill("분출 : 해돋이 우물 (장판)", 0, 1000, 82, 1, 16*1000, 0).wrap(CancelableSummonWrapper)
-        MountinSeed = core.StackableSummonSkillWrapper(
-            core.SummonSkill("산의 씨앗", 0, 500, 55, 1 * 4, 10*1000),
+        Eruption = core.BuffSkill("용맥 분출", 0, 0, cooltime=300).wrap(core.BuffSkillWrapper)
+        EruptionRiver = core.SummonSkill("분출 : 너울이는 강", 450, (8/16) * 1000, 205 + 105, 4, 16*1000, cooltime=-1).wrap(CancelableSummonWrapper)
+        EruptionWind = core.SummonSkill("분출 : 들개바람", 450, (5/16) * 1000, 65 + 105, 5, 16*1000, cooltime=-1).wrap(CancelableSummonWrapper)
+        EruptionSun = core.DamageSkill("분출 : 해돋이 우물", 450, 110 + 72, 6, cooltime=-1).wrap(core.DamageSkillWrapper)
+        EruptionSunPallet = core.SummonSkill("분출 : 해돋이 우물 (화산탄)", 0, (5/16) * 1000, 72, 1, 16*1000, 0, cooltime=-1).wrap(CancelableSummonWrapper)
+        EruptionSunPallet_2 = core.SummonSkill("분출 : 해돋이 우물 (화산탄 후속타)", 0, (5 / 16) * 1000, 72 * 0.9, 2, 16*1000, 0, cooltime=-1).wrap(CancelableSummonWrapper)
+        EruptionSunCarpet = core.SummonSkill("분출 : 해돋이 우물 (장판)", 0, 1000, 82, 1, 16*1000, 0, cooltime=-1).wrap(CancelableSummonWrapper)
+        EruptionSunDot = core.DotSkill("분출 : 해돋이 우물 (도트)", 0, 1000, 110, 1, 8000, cooltime=-1).wrap(core.DotSkillWrapper)
+        Planting = core.StackableSummonSkillWrapper(
+            core.SummonSkill("산의 씨앗", 0, 500, 55, 1 * 4, 10*1000, cooltime=-1),
             max_stack=4
         )
 
-        VeinBurstWaterOpt = core.OptionalElement(lambda: VeinBurst.is_available(), VeinBurstWater)
-        VeinBurstWindOpt = core.OptionalElement(lambda: VeinBurst.is_available(), VeinBurstWind)
-        VeinBurstFireOpt = core.OptionalElement(lambda: VeinBurst.is_available(), VeinBurstFire)
+        EruptionRiverOpt = core.OptionalElement(lambda: Eruption.is_available(), EruptionRiver)
+        EruptionWindOpt = core.OptionalElement(lambda: Eruption.is_available(), EruptionWind)
+        EruptionSunOpt = core.OptionalElement(lambda: Eruption.is_available(), EruptionSun)
 
-        VeinBurstWater.protect_from_running()
-        VeinBurstWind.protect_from_running()
-        VeinBurstFire.protect_from_running()
-        VeinBurstFirePallet.protect_from_running()
-        VeinBurstFirePallet_2.protect_from_running()
-        VeinBurstFireCarpet.protect_from_running()
-        MountinSeed.protect_from_running()
+        EruptionRiver.protect_from_running()
+        EruptionWind.protect_from_running()
+        EruptionSun.protect_from_running()
+        EruptionSunPallet.protect_from_running()
+        EruptionSunPallet_2.protect_from_running()
+        EruptionSunCarpet.protect_from_running()
+        EruptionSunDot.protect_from_running()
+        Planting.protect_from_running()
 
-        VeinBurstWater.onAfters([VeinBurst, MountinSeed])
-        VeinBurstWind.onAfters([VeinBurst, MountinSeed])
-        VeinBurstFire.onAfters([VeinBurst, MountinSeed, VeinBurstFirePallet, VeinBurstFirePallet_2, VeinBurstFireCarpet])
+        EruptionRiver.onAfters([Eruption, Planting])
+        EruptionWind.onAfters([Eruption, Planting])
+        EruptionSun.onAfters([Eruption, Planting, EruptionSunPallet, EruptionSunPallet_2, EruptionSunCarpet, EruptionSunDot])
 
         # 3차
         # 물, 바람 발현 스킬은 데미지에 영향을 주지 않음
         # 잠 깨우기는 항상 최소 개수만큼 생성된다고 가정
-        VeinManifestationFire = core.BuffSkill("발현 : 햇살 가득 안은 터", 690, 60*1000, cooltime=60*1000, pdamage=15).wrap(core.BuffSkillWrapper)
-        VeinAwakening = core.DamageSkill("잠 깨우기", 720, 105, 4, 11).wrap(core.DamageSkillWrapper)
-        VeinAwakening_2 = core.DamageSkill("잠 깨우기 (후속타)", 0, 105 * 0.6, 4 * 6).wrap(core.DamageSkillWrapper)
-        VeinTeleport = core.DamageSkill("용맥의 자취", 120, 500, 2, cooltime=6*1000).wrap(core.DamageSkillWrapper)
-        VeinCry = core.BuffSkill("용맥의 메아리", 0, 20*1000, pdamage_indep=5, rem=True).wrap(core.BuffSkillWrapper)
+        ExpressionSun = core.BuffSkill("발현 : 햇살 가득 안은 터", 690, 60*1000, cooltime=60000, pdamage=15).wrap(core.BuffSkillWrapper)
+        RoughEruption = core.DamageSkill("잠 깨우기", 720, 105, 4, cooltime=11000).wrap(core.DamageSkillWrapper)
+        RoughEruption_2 = core.DamageSkill("잠 깨우기 (후속타)", 0, 105 * 0.6, 4 * 6, cooltime=-1).wrap(core.DamageSkillWrapper)
+        Teleport = core.DamageSkill("용맥의 자취", 120, 500, 2, cooltime=6000).wrap(core.DamageSkillWrapper)
+        VeinCry = core.BuffSkill("용맥의 메아리", 0, 20*1000, pdamage_indep=5, rem=True, cooltime=-1).wrap(core.BuffSkillWrapper)
 
-        VeinAwakening_2.protect_from_running()
+        RoughEruption_2.protect_from_running()
         VeinCry.protect_from_running()
-        VeinBurstWater.onAfter(VeinCry)
-        VeinBurstWind.onAfter(VeinCry)
-        VeinBurstFire.onAfter(VeinCry)
-        VeinManifestationFire.onAfter(VeinCry)
-        VeinAwakening.onAfters([VeinCry, VeinAwakening_2])
+        EruptionRiver.onAfter(VeinCry)
+        EruptionWind.onAfter(VeinCry)
+        EruptionSun.onAfter(VeinCry)
+        ExpressionSun.onAfter(VeinCry)
+        RoughEruption.onAfters([VeinCry, RoughEruption_2])
 
         # 4차
-        VeinConsume = core.BuffSkill("용맥 흡수", 0, 0, 0.3*1000).wrap(core.BuffSkillWrapper)
+        Absorption = core.BuffSkill("용맥 흡수", 0, 0, 0.3*1000).wrap(core.BuffSkillWrapper)
 
-        VeinConsumeWater = core.BuffSkill("흡수 : 강 웅덩이 물벼락", 0, 45*1000, cooltime=2.5*1000).wrap(CancelableBuffWrapper)
-        VeinConsumeWind = core.BuffSkill("흡수 : 소소리 바람", 0, 45 * 1000, cooltime=2.5*1000).wrap(CancelableBuffWrapper)
-        VeinConsumeFire = core.BuffSkill("흡수 : 햇빛 맹아리", 0, 45 * 1000, cooltime=2.5*1000).wrap(CancelableBuffWrapper)
+        AbsorptionRiver = core.BuffSkill("흡수 : 강 웅덩이 물벼락", 0, 45*1000, cooltime=-1).wrap(CancelableBuffWrapper)
+        AbsorptionWind = core.BuffSkill("흡수 : 소소리 바람", 0, 45 * 1000, cooltime=-1).wrap(CancelableBuffWrapper)
+        AbsorptionSun = core.BuffSkill("흡수 : 햇빛 맹아리", 0, 45 * 1000, cooltime=-1).wrap(CancelableBuffWrapper)
 
-        VeinConsumeWater.protect_from_running()
-        VeinConsumeWind.protect_from_running()
-        VeinConsumeFire.protect_from_running()
+        AbsorptionRiver.protect_from_running()
+        AbsorptionWind.protect_from_running()
+        AbsorptionSun.protect_from_running()
 
-        CancelVeinBurstWater = VeinBurstWater.cancel_summon()
-        CancelVeinBurstWind = VeinBurstWind.cancel_summon()
-        CancelVeinBurstFire = VeinBurstFireCarpet.cancel_summon()
-        CancelVeinBurstFire.onAfter(VeinBurstFirePallet.cancel_summon())
+        CancelEruptionRiver = EruptionRiver.cancel_summon()
+        CancelEruptionWind = EruptionWind.cancel_summon()
+        CancelEruptionSun = EruptionSunCarpet.cancel_summon()
+        CancelEruptionSun.onAfter(EruptionSunPallet.cancel_summon())
 
-        CancelVeinConsumeWater = VeinConsumeWater.cancel_buff()
-        CancelVeinConsumeWind = VeinConsumeWind.cancel_buff()
-        CancelVeinConsumeFire = VeinConsumeFire.cancel_buff()
+        CancelAbsorptionRiver = AbsorptionRiver.cancel_buff()
+        CancelAbsorptionWind = AbsorptionWind.cancel_buff()
+        CancelAbsorptionSun = AbsorptionSun.cancel_buff()
 
-        VeinConsumeWater.onAfters([VeinConsume, CancelVeinBurstWater, VeinCry])
-        VeinConsumeWind.onAfters([VeinConsume, CancelVeinBurstWind, VeinCry])
-        VeinConsumeFire.onAfters([VeinConsume, CancelVeinBurstFire, VeinCry])
+        AbsorptionRiver.onAfters([Absorption, CancelEruptionRiver, VeinCry])
+        AbsorptionWind.onAfters([Absorption, CancelEruptionWind, VeinCry])
+        AbsorptionSun.onAfters([Absorption, CancelEruptionSun, VeinCry])
 
-        VeinBurstWater.onAfter(CancelVeinConsumeWater)
-        VeinBurstWind.onAfter(CancelVeinConsumeWind)
-        VeinBurstFire.onAfter(CancelVeinConsumeFire)
+        EruptionRiver.onAfter(CancelAbsorptionRiver)
+        EruptionWind.onAfter(CancelAbsorptionWind)
+        EruptionSun.onAfter(CancelAbsorptionSun)
 
-        VeinConsumeWaterOpt = core.OptionalElement(lambda: VeinConsume.is_available(), VeinConsumeWater)
-        VeinConsumeWindOpt = core.OptionalElement(lambda: VeinConsume.is_available(), VeinConsumeWind)
-        VeinConsumeFireOpt = core.OptionalElement(lambda: VeinConsume.is_available(), VeinConsumeFire)
+        AbsorptionRiverOpt = core.OptionalElement(lambda: Absorption.is_available(), AbsorptionRiver)
+        AbsorptionWindOpt = core.OptionalElement(lambda: Absorption.is_available(), AbsorptionWind)
+        AbsorptionSunOpt = core.OptionalElement(lambda: Absorption.is_available(), AbsorptionSun)
 
-        VeinConsumeWaterAttack = core.DamageSkill("흡수 : 강 웅덩이 물벼락 (공격)", 2500, 450, 6).wrap(core.DamageSkillWrapper)
-        VeinConsumeWindAttack = core.DamageSkill("흡수 : 소소리 바람 (공격)", 2500, 195, 2).wrap(core.DamageSkillWrapper)
-        VeinConsumeFireAttack = core.DamageSkill("흡수 : 햇빛 맹아리 (공격)", 2500, 180, 6).wrap(core.DamageSkillWrapper)
+        AbsorptionRiverAttack = core.DamageSkill("흡수 : 강 웅덩이 물벼락 (공격)", 2500, 450, 6, cooltime=2500).wrap(core.DamageSkillWrapper)
+        AbsorptionWindAttack = core.DamageSkill("흡수 : 소소리 바람 (공격)", 2500, 195, 2, cooltime=2500).wrap(core.DamageSkillWrapper)
+        AbsorptionSunAttack = core.DamageSkill("흡수 : 햇빛 맹아리 (공격)", 2500, 180, 6, cooltime=2500).wrap(core.DamageSkillWrapper)
 
-        VeinConsumeWaterAttack.protect_from_running()
-        VeinConsumeWindAttack.protect_from_running()
-        VeinConsumeFireAttack.protect_from_running()
+        AbsorptionRiverAttack.protect_from_running()
+        AbsorptionWindAttack.protect_from_running()
+        AbsorptionSunAttack.protect_from_running()
 
-        VeinConsumeWaterAttackOpt = core.OptionalElement(lambda: VeinConsumeWater.is_active() and VeinConsumeWaterAttack.is_available(), VeinConsumeWaterAttack)
-        VeinConsumeWindAttackOpt = core.OptionalElement(lambda: VeinConsumeWind.is_active() and VeinConsumeWindAttack.is_available(), VeinConsumeWindAttack)
-        VeinConsumeFireAttackOpt = core.OptionalElement(lambda: VeinConsumeFire.is_active() and VeinConsumeFireAttack.is_available(), VeinConsumeFireAttack)
+        AbsorptionRiverAttackOpt = core.OptionalElement(lambda: AbsorptionRiver.is_active() and AbsorptionRiverAttack.is_available(), AbsorptionRiverAttack)
+        AbsorptionWindAttackOpt = core.OptionalElement(lambda: AbsorptionWind.is_active() and AbsorptionWindAttack.is_available(), AbsorptionWindAttack)
+        AbsorptionSunAttackOpt = core.OptionalElement(lambda: AbsorptionSun.is_active() and AbsorptionSunAttack.is_available(), AbsorptionSunAttack)
 
-        Unknown1stJobAttack.onAfters([VeinConsumeWaterAttackOpt, VeinConsumeWindAttackOpt, VeinConsumeFireAttackOpt])
+        LaraAttack.onAfters([AbsorptionRiverAttackOpt, AbsorptionWindAttackOpt, AbsorptionSunAttackOpt])
+
+        # 하이퍼
+        HomeOfSpirits = core.BuffSkill("아름드리 나무", 660, 30, cooltime=180000, armor_ignore=15, boss_pdamage=50, crit_damage=10).wrap(core.BuffSkillWrapper)
+
+        # 5차
+        OverloadMana = magicians.OverloadManaBuilder(vEhc, 0, 0)
+        AnimaGoddessBless = core.BuffSkill("그란디스 여신의 축복 (아니마)", 0, 40 * 1000, cooltime=240000, red=True,
+                                           pdamage=10 + vEhc.getV(0, 0)).isV(vEhc, 0, 0).wrap(core.BuffSkillWrapper)
+        VeinMassAwakening = core.DamageSkill("큰 기지개", 870, 400 + vEhc.getV(0, 0) * 16, 5, cooltime=60000).wrap(core.DamageSkillWrapper)
+        VeinMassAwakening_2 = core.DamageSkill("큰 기지개 (후속타)", 0, (400 + vEhc.getV(0, 0) * 16) * 0.7, 6 * 5).isV(vEhc, 0, 0).wrap(core.DamageSkillWrapper)
+        CombinationBlow = core.DamageSkill("해 산 강 바람", 840, 675 + vEhc.getV(0, 0) * 27, 10*3, cooltime=180000).isV(vEhc, 0, 0).wrap(core.DamageSkillWrapper)
+        CombinationBlow_2 = core.DamageSkill("해 산 강 바람 (폭발)", 0, 750 + vEhc.getV(0, 0) * 30, 15*7).isV(vEhc, 0, 0).wrap(core.DamageSkillWrapper)
+        AdvancedLaraAttack = core.DamageSkill("용솟음치는 정기", 630, 425 + vEhc.getV(0, 0) * 17, 8*5, cooltime=20000).isV(vEhc, 0, 0).wrap(core.DamageSkillWrapper)
+        BurstUp = core.SummonSkill("산등성이 굽이굽이", 960, (20/30) * 1000, 325 + vEhc.getV(0, 0) * 13, 4*3, 30000, cooltime=60000).isV(vEhc, 0, 0).wrap(core.SummonSkillWrapper)
+
+        MirrorBreak, MirrorSpider = globalSkill.SpiderInMirrorBuilder(vEhc, 0, 0)
+
+        VeinMassAwakening_2.protect_from_running()
+        CombinationBlow_2.protect_from_running()
+        VeinMassAwakening.onAfters([VeinCry, VeinMassAwakening_2])
+        CombinationBlow.onAfter(CombinationBlow_2)
 
         return (
-            Unknown1stJobAttack,
+            LaraAttack,
             [
                 globalSkill.maple_heros(chtr.level, name="아니마의 용사", combat_level=self.combat),
                 globalSkill.useful_sharp_eyes(),
                 globalSkill.useful_combat_orders(),
                 globalSkill.soul_contract()
             ]
-            + [VeinBurstWater, VeinBurstWind, VeinBurstFireCarpet, VeinBurstFirePallet, MountinSeed]
-            + [VeinBurstWaterOpt, VeinBurstWindOpt, VeinBurstFireOpt, VeinConsumeWaterOpt, VeinConsumeWindOpt, VeinConsumeFireOpt]
-            + [Unknown1stJobAttack]
+            + [EruptionRiver, EruptionWind, EruptionSunCarpet, EruptionSunPallet, Planting]
+            + [EruptionRiverOpt, EruptionWindOpt, EruptionSunOpt, AbsorptionRiverOpt, AbsorptionWindOpt, AbsorptionSunOpt]
+            + [LaraAttack]
         )
 
