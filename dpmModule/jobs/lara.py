@@ -127,15 +127,9 @@ class JobGenerator(ck.JobGenerator):
         RoughEruption = core.DamageSkill("잠 깨우기", 720, 105, 4, cooltime=11000).wrap(core.DamageSkillWrapper)
         RoughEruption_2 = core.DamageSkill("잠 깨우기 (후속타)", 0, 105 * 0.6, 4 * 6, cooltime=-1).wrap(core.DamageSkillWrapper)
         Teleport = core.DamageSkill("용맥의 자취", 120, 500, 2, cooltime=6000).wrap(core.DamageSkillWrapper)
-        VeinCry = core.BuffSkill("용맥의 메아리", 0, 20*1000, pdamage_indep=5, rem=True, cooltime=-1).wrap(core.BuffSkillWrapper)
 
         RoughEruption_2.protect_from_running()
-        VeinCry.protect_from_running()
-        EruptionRiver.onAfter(VeinCry)
-        EruptionWind.onAfter(VeinCry)
-        EruptionSun.onAfter(VeinCry)
-        ExpressionSun.onAfter(VeinCry)
-        RoughEruption.onAfters([VeinCry, RoughEruption_2])
+        RoughEruption.onAfter(RoughEruption_2)
 
         # 4차
         Absorption = core.BuffSkill("용맥 흡수", 0, 0, 0.3*1000).wrap(core.BuffSkillWrapper)
@@ -157,9 +151,9 @@ class JobGenerator(ck.JobGenerator):
         CancelAbsorptionWind = AbsorptionWind.cancel_buff()
         CancelAbsorptionSun = AbsorptionSun.cancel_buff()
 
-        AbsorptionRiver.onAfters([Absorption, CancelEruptionRiver, VeinCry])
-        AbsorptionWind.onAfters([Absorption, CancelEruptionWind, VeinCry])
-        AbsorptionSun.onAfters([Absorption, CancelEruptionSun, VeinCry])
+        AbsorptionRiver.onAfters([Absorption, CancelEruptionRiver])
+        AbsorptionWind.onAfters([Absorption, CancelEruptionWind])
+        AbsorptionSun.onAfters([Absorption, CancelEruptionSun])
 
         EruptionRiver.onAfter(CancelAbsorptionRiver)
         EruptionWind.onAfter(CancelAbsorptionWind)
@@ -199,9 +193,31 @@ class JobGenerator(ck.JobGenerator):
 
         MirrorBreak, MirrorSpider = globalSkill.SpiderInMirrorBuilder(vEhc, 0, 0)
 
+        VeinCry = core.BuffSkill("용맥의 메아리", 0, 20000, pdamage_indep=5, rem=True, cooltime=-1).wrap(CancelableBuffWrapper)
+        VeinCryBuffed = core.BuffSkill("용맥의 메아리 (그여축)", 0, 20000, pdamage_indep=10, rem=True, cooltime=-1).wrap(CancelableBuffWrapper)
+
+        CancelVeinCry = VeinCry.cancel_buff()
+        CancelVeinCryBuffed = VeinCryBuffed.cancel_buff()
+
+        VeinCry.protect_from_running()
+        VeinCryBuffed.protect_from_running()
+
+        VeinCry.onAfter(CancelVeinCryBuffed)
+        VeinCryBuffed.onAfter(CancelVeinCry)
+
+        VeinCryOpt = core.OptionalElement(lambda: AnimaGoddessBless.is_active(), VeinCryBuffed, fail=VeinCry)
+
         VeinMassAwakening_2.protect_from_running()
         CombinationBlow_2.protect_from_running()
-        VeinMassAwakening.onAfters([VeinCry, VeinMassAwakening_2])
+        EruptionRiver.onAfter(VeinCryOpt)
+        EruptionWind.onAfter(VeinCryOpt)
+        EruptionSun.onAfter(VeinCryOpt)
+        ExpressionSun.onAfter(VeinCryOpt)
+        RoughEruption.onAfter(VeinCryOpt)
+        AbsorptionRiver.onAfter(VeinCryOpt)
+        AbsorptionWind.onAfter(VeinCryOpt)
+        AbsorptionSun.onAfter(VeinCryOpt)
+        VeinMassAwakening.onAfters([VeinCryOpt, VeinMassAwakening_2])
         CombinationBlow.onAfter(CombinationBlow_2)
 
         return (
@@ -210,10 +226,17 @@ class JobGenerator(ck.JobGenerator):
                 globalSkill.maple_heros(chtr.level, name="아니마의 용사", combat_level=self.combat),
                 globalSkill.useful_sharp_eyes(),
                 globalSkill.useful_combat_orders(),
+                ExpressionSun,
+                HomeOfSpirits,
+                AnimaGoddessBless,
+                VeinMassAwakening,
+                CombinationBlow,
+                AdvancedLaraAttack,
+                BurstUp,
                 globalSkill.soul_contract()
             ]
-            + [EruptionRiver, EruptionWind, EruptionSunCarpet, EruptionSunPallet, Planting]
-            + [EruptionRiverOpt, EruptionWindOpt, EruptionSunOpt, AbsorptionRiverOpt, AbsorptionWindOpt, AbsorptionSunOpt]
+            + [EruptionRiver, EruptionWind, EruptionSunCarpet, EruptionSunPallet, EruptionSunPallet_2, EruptionSunDot, Planting]
+            + [EruptionRiverOpt, EruptionWindOpt, EruptionSunOpt, AbsorptionRiverOpt, AbsorptionWindOpt, AbsorptionSunOpt, MirrorBreak, MirrorSpider]
             + [LaraAttack]
         )
 
